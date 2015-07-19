@@ -3,21 +3,21 @@ package com.speakingfish.common.builder.mega;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class MethodIdentifier implements Comparable<MethodIdentifier> {
+public class MethodId implements Comparable<MethodId> {
     
     public final String     name          ;
     public final Class<?>[] parameterTypes;
     
-    public MethodIdentifier(String name, Class<?>[] parameterTypes) {
+    public MethodId(String name, Class<?>[] parameterTypes) {
         super();
         this.name           = name          ;
         this.parameterTypes = parameterTypes;
     }
     
-    public MethodIdentifier(Method method) {
+    public MethodId(Method method) {
         this(method.getName(), method.getParameterTypes());
     }
-
+    
     @Override public int hashCode() {
         return name.hashCode() * 31 + Arrays.hashCode(parameterTypes);
     }
@@ -26,14 +26,14 @@ public class MethodIdentifier implements Comparable<MethodIdentifier> {
         if(this == obj) return true;
         if(obj == null) return false;
         if(getClass() != obj.getClass()) return false;
-        MethodIdentifier other = (MethodIdentifier) obj;
+        MethodId other = (MethodId) obj;
         return true
             && name.equals(other.name)
             && Arrays.equals(parameterTypes, other.parameterTypes)
             ;
     }
 
-    @Override public int compareTo(MethodIdentifier other) {
+    @Override public int compareTo(MethodId other) {
         int result;
         result = name.compareTo(other.name);
         if(result != 0) return result;

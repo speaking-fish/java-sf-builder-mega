@@ -2,10 +2,11 @@ package com.speakingfish.common.builder.mega.test;
 
 import com.speakingfish.common.builder.mega.BuiltBase;
 import com.speakingfish.common.builder.mega.BuiltValues;
+import com.speakingfish.common.builder.mega.ClassBuilder;
 import com.speakingfish.common.builder.mega.GetBase;
 import com.speakingfish.common.builder.mega.MegaBuilderDefinition;
 import com.speakingfish.common.builder.mega.TransBase;
-
+import com.speakingfish.common.builder.mega.MegaBuilder;
 import com.speakingfish.common.builder.mega.test.MyClass.Build.*;
 
 public class MyClass {
@@ -17,9 +18,8 @@ public class MyClass {
     public static class Build {
 
         // Built interface
-        // has single method returning new built class
-        public interface Built extends BuiltBase {
-            MyClass build();
+        // extends BuiltBase with result class type parameter
+        public interface Built extends BuiltBase<MyClass> {
         }
         
         // Getter interface
@@ -73,7 +73,7 @@ public class MyClass {
         // 3. optionally extends Built interface
         //
         //                                              transition interfaces
-        //                                                    |                       optionally Built interface
+        //                                                    |                       optional Built interface
         //                        getter interfaces           |                             |
         //                                   |                |                             |         matrix here
         //                             -------------  ----------------------------------  -----       ---------
@@ -94,7 +94,40 @@ public class MyClass {
     
     }
     
-    protected static final MegaBuilderDefinition<MyClass, Builder> __builder = new MegaBuilderDefinition<MyClass, Builder>(MyClass.class, Builder.class);
+    protected static final MegaBuilderDefinition<MyClass, Builder> __builder = MegaBuilder.newDefinition(
+        Builder.class,
+        new ClassBuilder<MyClass>() {
+            /**
+             * Common builder
+             * @param builder
+             */
+            @Override public MyClass build(BuiltValues values) {
+                return new MyClass(
+                    // There two field access methods: 
+                    // 1. access field via check instanceof and cast to getter class:
+                    (values instanceof Get_first) ? ((Get_first) values).first() : -1,
+                  //(null == values.get(Get_first .class)) ? -1        : values.get(Get_first .class).first (),
+                    // 2. access field via BuiltValues.get method
+                    (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
+                    (null == values.get(Get_third .class)) ? null      : values.get(Get_third .class).third ()
+                    );
+            }
+            
+            /**
+             * Specific builder
+             * @param builder
+             */
+            @SuppressWarnings("unused")
+            public MyClass build(B_1_2 builder) {
+                return new MyClass(
+                    builder.first (),
+                    builder.second(),
+                    null
+                    );
+            }
+            
+        }
+    );
     
     public static Builder builder() {
         return __builder.createBuilder();
@@ -116,36 +149,11 @@ public class MyClass {
         return "FooClass [first=" + first + ", second=" + second + ", third=" + third + "]";
     }
 
-    /**
-     * Common constructor
-     * @param values
-     */
-    protected MyClass(BuiltValues values) {
-        this(
-            (values instanceof Get_first) ? ((Get_first) values).first() : -1,
-          //(null == values.get(Get_first .class)) ? -1        : values.get(Get_first .class).first (),
-            (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
-            (null == values.get(Get_third .class)) ? null      : values.get(Get_third .class).third ()
-            );
-    }
-
-    /**
-     * Specific constructor
-     * @param builder
-     */
-    protected MyClass(B_1_2 builder) {
-        this(
-            builder.first (),
-            builder.second(),
-            null
-            );
-    }
-    
     public static void main(String[] args) {
         MyClass[] values = new MyClass[] {
             builder()                              .build(),
-            builder().first(1).second(2)           .build(), builder().second(2  ).first (1).build(),
             builder().first(1)                     .build(),
+            builder().first(1).second(2)           .build(), builder().second(2  ).first (1).build(),
             builder().first(1)          .third("3").build(), builder().third ("3").first (1).build(), 
             builder()         .second(2).third("3").build(), builder().third ("3").second(2).build(),
             builder()                   .third("3").build(),

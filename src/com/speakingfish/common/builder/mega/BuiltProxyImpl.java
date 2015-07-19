@@ -3,7 +3,7 @@ package com.speakingfish.common.builder.mega;
 import java.util.Map;
 
 class BuiltProxyImpl {
-        protected Map<MethodIdentifier, MethodInvoker<?>> _methods;
+        protected Map<MethodId, InstanceMethodInvoker<?>> _methods;
     }
 /*    
     public static <RESULT, BUILDER> BUILDER createBuilder(final Class<RESULT> resultClass, final Class<BUILDER> builderClass) {
