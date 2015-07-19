@@ -1,7 +1,6 @@
 package com.speakingfish.common.builder.mega;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 
 public class MegaBuilder {
     
@@ -14,7 +13,6 @@ public class MegaBuilder {
                 }
             }
             Class<?>[] interfaces = intf.getInterfaces();
-            Type[] genericInterfaces = intf.getGenericInterfaces();
             for(Class<?> superIntf : interfaces) {
                 if(stop.isAssignableFrom(superIntf)) {
                     intf = superIntf;
