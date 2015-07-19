@@ -1,12 +1,10 @@
 package com.speakingfish.common.builder.mega.test;
 
-import com.speakingfish.common.builder.mega.BuiltBase;
-import com.speakingfish.common.builder.mega.BuiltValues;
-import com.speakingfish.common.builder.mega.ClassBuilder;
-import com.speakingfish.common.builder.mega.GetBase;
-import com.speakingfish.common.builder.mega.MegaBuilderDefinition;
-import com.speakingfish.common.builder.mega.TransBase;
 import com.speakingfish.common.builder.mega.MegaBuilder;
+import com.speakingfish.common.builder.mega.MegaBuilderDefinition;
+
+import com.speakingfish.common.builder.mega.MegaBuilder.*;
+
 import com.speakingfish.common.builder.mega.test.MyClass.Build.*;
 
 public class MyClass {

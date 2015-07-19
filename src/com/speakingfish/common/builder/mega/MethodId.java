@@ -3,24 +3,30 @@ package com.speakingfish.common.builder.mega;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class MethodId implements Comparable<MethodId> {
+/**
+ * 
+ * Method Id
+ *
+ */
+class MethodId implements Comparable<MethodId> {
     
     public final String     name          ;
     public final Class<?>[] parameterTypes;
+    
+    protected final int _hashCode;
     
     public MethodId(String name, Class<?>[] parameterTypes) {
         super();
         this.name           = name          ;
         this.parameterTypes = parameterTypes;
+        _hashCode = name.hashCode() * 31 + Arrays.hashCode(parameterTypes);
     }
     
     public MethodId(Method method) {
         this(method.getName(), method.getParameterTypes());
     }
     
-    @Override public int hashCode() {
-        return name.hashCode() * 31 + Arrays.hashCode(parameterTypes);
-    }
+    @Override public int hashCode() { return _hashCode; }
 
     @Override public boolean equals(Object obj) {
         if(this == obj) return true;

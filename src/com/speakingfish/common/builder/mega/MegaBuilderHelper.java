@@ -2,7 +2,9 @@ package com.speakingfish.common.builder.mega;
 
 import java.lang.reflect.Method;
 
-public class MegaBuilderHelper {
+import com.speakingfish.common.builder.mega.MegaBuilder.*;
+
+class MegaBuilderHelper {
     
     public static Method[] getMethodsDeclaredAfter(Class<?> intf, Class<?> stop) {
         Method[] result = new Method[0];

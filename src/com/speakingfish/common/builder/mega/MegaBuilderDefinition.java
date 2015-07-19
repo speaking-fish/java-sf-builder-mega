@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.speakingfish.common.builder.mega.MegaBuilder.*;
+
 import static com.speakingfish.common.builder.mega.MegaBuilderHelper.*;
 
 public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
@@ -166,6 +168,12 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
         
         @SuppressWarnings("unchecked")
         public void init() {
+            _methodById.put(MethodId_BuiltValues_get, InstanceMethodInvoker_BuiltValues_get);
+            
+            _methodById.put(MethodId_Object_equals  , InstanceMethodInvoker_Object_equals  );
+            _methodById.put(MethodId_Object_hashCode, InstanceMethodInvoker_Object_hashCode);
+            _methodById.put(MethodId_Object_toString, InstanceMethodInvoker_Object_toString);
+            
             final Set<Class<?>> interfaces = getInterfaces(_builderClass);
             for(final Class<?> intf : interfaces) {
                 if(!Base.class.isAssignableFrom(intf)) {
@@ -175,20 +183,14 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
                     final MethodId id = new MethodId(method);
                     if(!_methodById.containsKey(id)) {
                         final InstanceMethodInvoker<?> invoker;
-                        {}   if(GetBase    .class.isAssignableFrom(intf)) invoker = instanceMethodInvoker_GetBase_method (getInterfaceDeclaredAfter ((Class<GetBase  >) intf, GetBase  .class));
+                        {}   if(GetBase    .class.isAssignableFrom(intf)) invoker = instanceMethodInvoker_GetBase_method  (getInterfaceDeclaredAfter((Class<GetBase  >) intf, GetBase  .class));
                         else if(TransBase  .class.isAssignableFrom(intf)) invoker = instanceMethodInvoker_TransBase_method(getInterfaceDeclaredAfter((Class<TransBase>) intf, TransBase.class));
-                      //else if(BuiltValues.class.isAssignableFrom(intf)) invoker = InstanceMethodInvoker_BuiltValues_get;
                         else if(BuiltBase  .class.isAssignableFrom(intf)) invoker = InstanceMethodInvoker_BuiltBase_build; 
                         else throw new IllegalArgumentException("Error: interface is not builder get/trans/built interface: " + intf.getName());
                         _methodById.put(id, invoker);
                     }
                 }
             }
-            _methodById.put(MethodId_BuiltValues_get, InstanceMethodInvoker_BuiltValues_get);
-            
-            _methodById.put(MethodId_Object_equals  , InstanceMethodInvoker_Object_equals  );
-            _methodById.put(MethodId_Object_hashCode, InstanceMethodInvoker_Object_hashCode);
-            _methodById.put(MethodId_Object_toString, InstanceMethodInvoker_Object_toString);
         }
         
         public MethodInvokerGet<Object> instanceMethodInvoker_GetBase_method(Class<? extends GetBase> intf) {
