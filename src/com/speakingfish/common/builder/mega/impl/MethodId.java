@@ -1,4 +1,4 @@
-package com.speakingfish.common.builder.mega;
+package com.speakingfish.common.builder.mega.impl;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -8,7 +8,7 @@ import java.util.Arrays;
  * Method Id
  *
  */
-class MethodId implements Comparable<MethodId> {
+public class MethodId implements Comparable<MethodId> {
     
     public final String     name          ;
     public final Class<?>[] parameterTypes;

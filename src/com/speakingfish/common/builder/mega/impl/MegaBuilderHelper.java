@@ -1,10 +1,10 @@
-package com.speakingfish.common.builder.mega;
+package com.speakingfish.common.builder.mega.impl;
 
 import java.lang.reflect.Method;
 
 import com.speakingfish.common.builder.mega.MegaBuilder.*;
 
-class MegaBuilderHelper {
+public class MegaBuilderHelper {
     
     public static Method[] getMethodsDeclaredAfter(Class<?> intf, Class<?> stop) {
         Method[] result = new Method[0];
@@ -60,27 +60,35 @@ class MegaBuilderHelper {
     }
 
     
-    public static final InstanceMethodInvoker<Object> InstanceMethodInvoker_BuiltValues_get = new InstanceMethodInvoker<Object>() {
+    public static final InstanceMethodInvoker<
+        Object, ? extends Base, Object, ? extends Base
+    > InstanceMethodInvoker_BuiltValues_get = new InstanceMethodInvoker<Object, Base, Object, Base>() {
         @SuppressWarnings("unchecked")
-        @Override public Object invoke(Instance instance, Object[] args) {
+        @Override public Object invoke(Instance<Base, Object, Base> instance, Object[] args) {
             return instance.get((Class<GetBase>) args[0]);
         }
     };
     
-    public static final InstanceMethodInvoker<Object> InstanceMethodInvoker_Object_equals = new InstanceMethodInvoker<Object>() {
-        @Override public Object invoke(Instance instance, Object[] args) {
+    public static final InstanceMethodInvoker<
+        Object, ? extends Base, Object, ? extends Base
+    > InstanceMethodInvoker_Object_equals = new InstanceMethodInvoker<Object, Base, Object, Base>() {
+        @Override public Object invoke(Instance<Base, Object, Base>  instance, Object[] args) {
             return instance.equals(args[0]);
         }
     };
     
-    public static final InstanceMethodInvoker<Object> InstanceMethodInvoker_Object_hashCode = new InstanceMethodInvoker<Object>() {
-        @Override public Object invoke(Instance instance, Object[] args) {
+    public static final InstanceMethodInvoker<
+        Object, ? extends Base, Object, ? extends Base
+    > InstanceMethodInvoker_Object_hashCode = new InstanceMethodInvoker<Object, Base, Object, Base>() {
+        @Override public Object invoke(Instance<Base, Object, Base>  instance, Object[] args) {
             return instance.hashCode();
         }
     };
     
-    public static final InstanceMethodInvoker<Object> InstanceMethodInvoker_Object_toString = new InstanceMethodInvoker<Object>() {
-        @Override public Object invoke(Instance instance, Object[] args) {
+    public static final InstanceMethodInvoker<
+        Object, ? extends Base, Object, ? extends Base
+    > InstanceMethodInvoker_Object_toString = new InstanceMethodInvoker<Object, Base, Object, Base>() {
+        @Override public Object invoke(Instance<Base, Object, Base> instance, Object[] args) {
             return instance.toString();
         }
     };

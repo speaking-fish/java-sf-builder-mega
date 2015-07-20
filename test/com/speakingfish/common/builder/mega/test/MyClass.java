@@ -1,10 +1,7 @@
 package com.speakingfish.common.builder.mega.test;
 
 import com.speakingfish.common.builder.mega.MegaBuilder;
-import com.speakingfish.common.builder.mega.MegaBuilderDefinition;
-
 import com.speakingfish.common.builder.mega.MegaBuilder.*;
-
 import com.speakingfish.common.builder.mega.test.MyClass.Build.*;
 
 public class MyClass {
@@ -92,11 +89,12 @@ public class MyClass {
     
     }
     
-    protected static final MegaBuilderDefinition<MyClass, Builder> __builder = MegaBuilder.newDefinition(
+    //protected static final MegaBuilder<MyClass, Builder> __builder = MegaBuilder.newBuilder(
+    protected static final Builder __builder = MegaBuilder.newBuilder(
         Builder.class,
         new ClassBuilder<MyClass>() {
             /**
-             * Common builder
+             * Common builder [required]
              * @param builder
              */
             @Override public MyClass build(BuiltValues values) {
@@ -104,7 +102,6 @@ public class MyClass {
                     // There two field access methods: 
                     // 1. access field via check instanceof and cast to getter class:
                     (values instanceof Get_first) ? ((Get_first) values).first() : -1,
-                  //(null == values.get(Get_first .class)) ? -1        : values.get(Get_first .class).first (),
                     // 2. access field via BuiltValues.get method
                     (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
                     (null == values.get(Get_third .class)) ? null      : values.get(Get_third .class).third ()
@@ -112,11 +109,12 @@ public class MyClass {
             }
             
             /**
-             * Specific builder
+             * Specific builder [optional]
              * @param builder
              */
             @SuppressWarnings("unused")
             public MyClass build(B_1_2 builder) {
+                System.out.println("Running specific builder B_1_2");
                 return new MyClass(
                     builder.first (),
                     builder.second(),
@@ -127,9 +125,7 @@ public class MyClass {
         }
     );
     
-    public static Builder builder() {
-        return __builder.createBuilder();
-    }
+    public static Builder builder() { return __builder; }
     
     protected MyClass(
         int    first ,
@@ -145,6 +141,33 @@ public class MyClass {
     
     @Override public String toString() {
         return "FooClass [first=" + first + ", second=" + second + ", third=" + third + "]";
+    }
+    
+    @Override public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + first;
+        long temp;
+        temp = Double.doubleToLongBits(second);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        result = prime * result + ((third == null) ? 0 : third.hashCode());
+        return result;
+    }
+
+    @Override public boolean equals(Object obj) {
+        if(this == obj) return true;
+        if(obj == null) return false;
+        if(getClass() != obj.getClass()) return false;
+        MyClass other = (MyClass) obj;
+        if(first != other.first) return false;
+        if(Double.doubleToLongBits(second) != Double.doubleToLongBits(other.second))
+            return false;
+        
+        if(third == null) {
+            if(other.third != null) return false;
+            
+        } else if(!third.equals(other.third)) return false;
+        return true;
     }
 
     public static void main(String[] args) {
