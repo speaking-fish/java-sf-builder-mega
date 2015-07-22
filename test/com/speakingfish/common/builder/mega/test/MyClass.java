@@ -6,10 +6,6 @@ import com.speakingfish.common.builder.mega.test.MyClass.Build.*;
 
 public class MyClass {
     
-    protected final int    first ;
-    protected final double second;
-    protected final String third ;
-    
     public static class Build {
 
         // Built interface
@@ -18,8 +14,9 @@ public class MyClass {
         }
         
         // Getter interface
+        // (no interface name restrictions)
         // 1. extends GetBase
-        // 2. has single field getter method without parameters
+        // 2. has single field getter method without parameters (no method name restrictions)
         //
         //                    extends GetBase                field name
         //                                  |   result type  |
@@ -34,10 +31,11 @@ public class MyClass {
         public interface G_3 extends Get_third {}
         
         // Transition interface
+        // (no interface name restrictions)
         // 1. extends TransBase
         // 2. has single type parameter, what extends linked getter interface
         // 3. has single transition method with parameter of same type as in linked getter interface
-        //    and return type of this transition interface type parameter
+        //    and return type of this transition interface type parameter (no method name restrictions)
         //
         //                                  return type parameter
         //                                                      | field name
@@ -63,12 +61,13 @@ public class MyClass {
         //
         
         // Builder interface
+        // (no interface name restrictions)
         // 1. extends getter interfaces except initial builder
         // 2. extends transition interfaces
         // 3. optionally extends Built interface
         //
         //                                              transition interfaces
-        //                                                    |                       optional Built interface
+        //                                                    |                    optional Built interface
         //                        getter interfaces           |                             |
         //                                   |                |                             |         matrix here
         //                             -------------  ----------------------------------  -----       ---------
@@ -77,7 +76,7 @@ public class MyClass {
         //                             |    second    |           second                              | second
         //                             |    |    third|           |           third                   | | third
         //                             |    |    |    |           |           |                       | | |
-        public interface B     extends                T_1<B_1>  , T_2<B_2>  , T_3<B_3>  , Built {} // - - -
+        public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {} // - - -
         public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {} // + - -
         public interface B_1_2 extends G_1, G_2,                                          Built {} // + + - 
         public interface B_1_3 extends G_1,      G_3,                                     Built {} // + - +
@@ -99,12 +98,13 @@ public class MyClass {
              */
             @Override public MyClass build(BuiltValues values) {
                 return new MyClass(
-                    // There two field access methods: 
+                    // There three ways to access values: 
                     // 1. access field via check instanceof and cast to getter class:
                     (values instanceof Get_first) ? ((Get_first) values).first() : -1,
                     // 2. access field via BuiltValues.get method
                     (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
-                    (null == values.get(Get_third .class)) ? null      : values.get(Get_third .class).third ()
+                    // 3. access field via BuiltValues.get with specify default value method
+                    values.get(Get_third.class, null).third()
                     );
             }
             
@@ -127,6 +127,10 @@ public class MyClass {
     
     public static Builder builder() { return __builder; }
     
+    protected final int    first ;
+    protected final double second;
+    protected final String third ;
+    
     protected MyClass(
         int    first ,
         double second,
@@ -138,9 +142,12 @@ public class MyClass {
         this.third = third ;
     }
     
+    public int    first () { return first ; }
+    public double second() { return second; }
+    public String third () { return third ; }
     
     @Override public String toString() {
-        return "FooClass [first=" + first + ", second=" + second + ", third=" + third + "]";
+        return "MyClass [first=" + first + ", second=" + second + ", third=" + third + "]";
     }
     
     @Override public int hashCode() {

@@ -9,12 +9,12 @@ import com.speakingfish.common.builder.mega.MegaBuilder.*;
  */
 public class TransInstance<PARENT_BUILDER extends Base, RESULT_CLASS, INITIAL_BUILDER extends Base> {
     
-    public final Instance<PARENT_BUILDER, RESULT_CLASS, INITIAL_BUILDER> parent     ;
+    public final BuilderInstance<PARENT_BUILDER, RESULT_CLASS, INITIAL_BUILDER> parent     ;
     public final Class   <? extends GetBase                            > getterClass;
     public final Object                                                  value      ;
     
     public TransInstance(
-        Instance<PARENT_BUILDER, RESULT_CLASS, INITIAL_BUILDER> parent     ,
+        BuilderInstance<PARENT_BUILDER, RESULT_CLASS, INITIAL_BUILDER> parent     ,
         Class   <?  extends GetBase                           > getterClass,
         Object                                                  value
     ) {

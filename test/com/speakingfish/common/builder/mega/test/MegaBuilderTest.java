@@ -9,7 +9,7 @@ import com.speakingfish.common.builder.mega.test.MyClass.Build.Get_first;
 
 public class MegaBuilderTest {
     
-	@Test public void testFullMatrix() {
+	@Test public void testFullMatrixEquals() {
         MyClass[] constructed = new MyClass[] {
         //  main                               alternatives
         //  ---------------------------------  ---------------------------------
@@ -63,4 +63,8 @@ public class MegaBuilderTest {
         assertEquals(1, ((Get_first) MyClass.builder()).first());
     }
 
+    @Test (expected = ClassCastException.class) public void testCastException2() {
+        assertEquals(1, ((Get_first) MyClass.builder().second(2)).first());
+    }
+    
 }
