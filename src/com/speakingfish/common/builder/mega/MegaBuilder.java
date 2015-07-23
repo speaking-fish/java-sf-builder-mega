@@ -9,11 +9,14 @@ import com.speakingfish.common.builder.mega.impl.*;
 /**
  * 
  * MegaBuilder facade
+ * 
+ * Single class per (RESULT_CLASS + INITIAL_BUILDER + ClassBuilder instance
  *
+ * @param <CONTEXT> local context parameter
  * @param <RESULT_CLASS> result class
  * @param <INITIAL_BUILDER> initial builder interface
  */
-public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base> {
+public class MegaBuilder<CONTEXT, RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base> {
     
     /** Marker interface */
     public interface Base {}
@@ -34,15 +37,15 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
     }
 
     /**
-     *
-     * Result class creation is here
-     *
-     * @param <RESULT_CLASS> result class
-     */
-    public interface ClassBuilder<RESULT_CLASS> {
-        RESULT_CLASS build(BuiltValues values);
-    }
-   
+    *
+    * Result class creation is here
+    *
+    * @param <RESULT_CLASS> result class
+    */
+   public interface ClassBuilder<CONTEXT, RESULT_CLASS> {
+       RESULT_CLASS build(CONTEXT context, BuiltValues values);
+   }
+    
     /**
      * Field values holder
      *  
@@ -61,6 +64,21 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
          * @return getter interface with actual value, or if no value assigned, defaultValue wrapped with getter interface or null if key is wrong getter type
          */
         <T extends GetBase> T get(Class<T> key, Object defaultValue);
+    }
+    
+    public class Instance {
+        
+        protected final CONTEXT _context;
+        
+        public Instance(CONTEXT context) { _context = context; }
+        
+        public CONTEXT context() { return _context; }
+        
+        public INITIAL_BUILDER create() { return definition().create(this); }
+        
+        public RESULT_CLASS build(BuilderInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER> instance) {
+            return MegaBuilder.this.build(instance, this.context());
+        }
     }
 
     /**
@@ -83,17 +101,17 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
      * @param classBuilder
      * @return
      */
-    public static <RESULT_CLASS, INITIAL_BUILDER extends Base
-    > MegaBuilder<RESULT_CLASS, INITIAL_BUILDER> newMegaBuilder(
+    public static <CONTEXT, RESULT_CLASS, INITIAL_BUILDER extends Base
+    > MegaBuilder<CONTEXT, RESULT_CLASS, INITIAL_BUILDER> newMegaBuilder(
         MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER> builderDefinition,
-        ClassBuilder         <RESULT_CLASS                 > classBuilder
+        ClassBuilder         <CONTEXT, RESULT_CLASS        > classBuilder
     ) {
-        return new MegaBuilder<RESULT_CLASS, INITIAL_BUILDER>(
+        return new MegaBuilder<CONTEXT, RESULT_CLASS, INITIAL_BUILDER>(
             builderDefinition,
             classBuilder
             );
     }
-
+    
     /**
      * Create MegaBuilder.
      * Useful in some cases.
@@ -101,10 +119,10 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
      * @param classBuilder
      * @return
      */
-    public static <RESULT_CLASS, INITIAL_BUILDER extends Base
-    > MegaBuilder<RESULT_CLASS, INITIAL_BUILDER> newMegaBuilder(
-        Class       <INITIAL_BUILDER> initialBuilderClass,
-        ClassBuilder<RESULT_CLASS   > classBuilder
+    public static <CONTEXT, RESULT_CLASS, INITIAL_BUILDER extends Base
+    > MegaBuilder<CONTEXT, RESULT_CLASS, INITIAL_BUILDER> newMegaBuilder(
+        Class       <INITIAL_BUILDER      > initialBuilderClass,
+        ClassBuilder<CONTEXT, RESULT_CLASS> classBuilder
     ) {
         return newMegaBuilder(
             MegaBuilder.<RESULT_CLASS, INITIAL_BUILDER>newDefinition(initialBuilderClass),
@@ -119,22 +137,39 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
      * @param classBuilder
      * @return
      */
-    public static <RESULT_CLASS, INITIAL_BUILDER extends Base
+    public static <CONTEXT, RESULT_CLASS, INITIAL_BUILDER extends Base
     > INITIAL_BUILDER newBuilder(
-        Class       <INITIAL_BUILDER> initialBuilderClass,
-        ClassBuilder<RESULT_CLASS   > classBuilder
+        Class       <INITIAL_BUILDER      > initialBuilderClass,
+        CONTEXT                             context            ,
+        ClassBuilder<CONTEXT, RESULT_CLASS> classBuilder
     ) {
-        return newMegaBuilder(initialBuilderClass, classBuilder).create();
+        return newMegaBuilder(initialBuilderClass, classBuilder).create(context);
+    }
+
+    /**
+     * Create initial builder.
+     * Useful for create MegaBuilder instantiation variations.
+     * @param initialBuilderClass
+     * @param classBuilder
+     * @return
+     */
+    public static <CONTEXT, RESULT_CLASS, INITIAL_BUILDER extends Base
+    > INITIAL_BUILDER newBuilder(
+        MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER> builderDefinition,
+        CONTEXT                                              context          ,
+        ClassBuilder         <CONTEXT, RESULT_CLASS        > classBuilder
+    ) {
+        return newMegaBuilder(builderDefinition, classBuilder).create(context);
     }
     
     protected final MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER> _definition  ;
-    protected final ClassBuilder         <RESULT_CLASS                 > _classBuilder;
+    protected final ClassBuilder         <CONTEXT, RESULT_CLASS        > _classBuilder;
     
     protected Map<Class<? extends Base>, Method> _creatorMethodByBuiltClass = null;
     
     public MegaBuilder(
         MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER> definition  ,
-        ClassBuilder         <RESULT_CLASS                 > classBuilder
+        ClassBuilder         <CONTEXT, RESULT_CLASS        > classBuilder
     ) {
         super();
         _definition   = definition  ;
@@ -146,11 +181,11 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
             ) {
                 final Class<?>[] parameterTypes = method.getParameterTypes();
                 if(true
-                    && (1 == parameterTypes.length)
-                    && (Base.class.isAssignableFrom(parameterTypes[0]))
+                    && (2 == parameterTypes.length)
+                    && (Base.class.isAssignableFrom(parameterTypes[1]))
                 ) {
-                    final MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<? extends Base>
-                    bulderDefinition = definition.definitionByClassMap().get(parameterTypes[0]);
+                    final MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<CONTEXT, ? extends Base>
+                    bulderDefinition = definition.<CONTEXT>definitionByClassMap().get(parameterTypes[1]);
                     if(null != bulderDefinition) {
                         if(null == _creatorMethodByBuiltClass) {
                             _creatorMethodByBuiltClass = new HashMap<Class<? extends Base>, Method>(); 
@@ -163,23 +198,26 @@ public class MegaBuilder<RESULT_CLASS, INITIAL_BUILDER extends MegaBuilder.Base>
         }
     }
     
-    public RESULT_CLASS build(BuilderInstance<? extends Base, RESULT_CLASS, INITIAL_BUILDER> instance) {
+    public RESULT_CLASS build(
+        BuilderInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER> instance,
+        CONTEXT context
+    ) {
         if(null != _creatorMethodByBuiltClass) {
             final Method creator = _creatorMethodByBuiltClass.get(instance.definition().builderClass());
             if(null != creator) {
                 try {
                     @SuppressWarnings("unchecked")
-                    final RESULT_CLASS result = (RESULT_CLASS) creator.invoke(_classBuilder, instance.proxy());
+                    final RESULT_CLASS result = (RESULT_CLASS) creator.invoke(_classBuilder, context, instance.proxy());
                     return result;
                 } catch(ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
-        return _classBuilder.build((BuiltValues) instance.proxy());
+        return _classBuilder.build(context, (BuiltValues) instance.proxy());
     }
     
-    public INITIAL_BUILDER create() { return definition().create(this); }
+    public INITIAL_BUILDER create(CONTEXT context) { return definition().create(new Instance(context)); }
 
     public MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER> definition() { return _definition; }
     

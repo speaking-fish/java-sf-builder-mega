@@ -4,27 +4,27 @@ import com.speakingfish.common.builder.mega.MegaBuilder;
 import com.speakingfish.common.builder.mega.MegaBuilderDefinition;
 import com.speakingfish.common.builder.mega.MegaBuilder.*;
 
-public class BuilderInstance<BUILDER extends Base, RESULT_CLASS, INITIAL_BUILDER extends Base>
+public class BuilderInstance<CONTEXT, BUILDER extends Base, RESULT_CLASS, INITIAL_BUILDER extends Base>
 extends CommonInstance<
-    MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<BUILDER>,
-    BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>,
+    MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<CONTEXT, BUILDER>,
+    BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>,
     BUILDER
 > implements BuiltValues {
-    protected final MegaBuilder  <                RESULT_CLASS, INITIAL_BUILDER> _builder   ;
-    protected final TransInstance<? extends Base, RESULT_CLASS, INITIAL_BUILDER> _transition;
+    protected final MegaBuilder  <CONTEXT,                 RESULT_CLASS, INITIAL_BUILDER>.Instance _builder   ;
+    protected final TransInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER>          _transition;
     
     public BuilderInstance(
-        MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<BUILDER> definition,
-        MegaBuilder          <                RESULT_CLASS, INITIAL_BUILDER    > builder   ,
-        TransInstance        <? extends Base, RESULT_CLASS, INITIAL_BUILDER    > transition
+        MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<CONTEXT, BUILDER>          definition,
+        MegaBuilder          <CONTEXT,                 RESULT_CLASS, INITIAL_BUILDER    >.Instance builder   ,
+        TransInstance        <CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER    >          transition
     ) {
         super(definition);
         _builder    = builder   ;
         _transition = transition;
     }
     
-    public MegaBuilder  <                RESULT_CLASS, INITIAL_BUILDER> builder   () { return _builder   ; }
-    public TransInstance<? extends Base, RESULT_CLASS, INITIAL_BUILDER> transition() { return _transition; }
+    public MegaBuilder  <CONTEXT,                 RESULT_CLASS, INITIAL_BUILDER>.Instance builder   () { return _builder   ; }
+    public TransInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER>          transition() { return _transition; }
     
     @SuppressWarnings("unchecked")
     @Override public <T extends GetBase> T get(Class<T> key) {

@@ -13,23 +13,30 @@ import com.speakingfish.common.builder.mega.impl.*;
 
 import static com.speakingfish.common.builder.mega.impl.MegaBuilderHelper.*;
 
+/**
+ * 
+ * Single class per INITIAL_BUILDER
+ *
+ * @param <RESULT_CLASS>
+ * @param <INITIAL_BUILDER>
+ */
 public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
     
-    protected static final MethodInvoker<Object, BuilderInstance<Base, Object, Base>
-    > MethodInvoker_BuiltBase_build = new MethodInvoker<Object, BuilderInstance<Base, Object, Base>>() {
-        @Override public Object invoke(BuilderInstance<Base, Object, Base> instance, Object[] args) {
+    protected static final MethodInvoker<Object, BuilderInstance<Object, Base, Object, Base>
+    > MethodInvoker_BuiltBase_build = new MethodInvoker<Object, BuilderInstance<Object, Base, Object, Base>>() {
+        @Override public Object invoke(BuilderInstance<Object, Base, Object, Base> instance, Object[] args) {
             return instance.builder().build(instance);
         }
     };
     
     
-    protected final Map<Class<? extends Base>, Definition<? extends Base>> _definitionByClass
-    =       new HashMap<Class<? extends Base>, Definition<? extends Base>>();
+    protected final Map<Class<? extends Base>, Definition<?, ? extends Base>> _definitionByClass
+    =       new HashMap<Class<? extends Base>, Definition<?, ? extends Base>>();
 
     protected final Map<Class<? extends GetBase>, GetterValueDefinition<? extends Base, ?>> _getterValueDefinitionByClass
     =       new HashMap<Class<? extends GetBase>, GetterValueDefinition<? extends Base, ?>>();
     
-    protected final Definition<INITIAL_BUILDER> _initialDefinition;
+    protected final Definition<?, INITIAL_BUILDER> _initialDefinition;
     
     protected Class<RESULT_CLASS> _resultClass = null;
     
@@ -37,14 +44,18 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
         _initialDefinition = getDefinition(initialBuilderClass);
     }
     
-    public Definition<INITIAL_BUILDER> initialDefinition() { return _initialDefinition; }
-    public Class     <RESULT_CLASS   > resultClass      () { return _resultClass      ; }
+    @SuppressWarnings("unchecked")
+    public <CONTEXT> MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<CONTEXT, INITIAL_BUILDER> initialDefinition() {
+        return (MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER>.Definition<CONTEXT, INITIAL_BUILDER>) _initialDefinition;
+    }
     
-    protected <BUILDER extends Base> Definition<BUILDER> getDefinition(Class<BUILDER> builderClass) {
+    public Class<RESULT_CLASS> resultClass() { return _resultClass; }
+    
+    protected <CONTEXT, BUILDER extends Base> Definition<CONTEXT, BUILDER> getDefinition(Class<BUILDER> builderClass) {
         @SuppressWarnings("unchecked")
-        Definition<BUILDER> result = (Definition<BUILDER>) _definitionByClass.get(builderClass);
+        Definition<CONTEXT, BUILDER> result = (Definition<CONTEXT, BUILDER>) _definitionByClass.get(builderClass);
         if(null == result) {
-            result = new Definition<BUILDER>(builderClass);
+            result = new Definition<CONTEXT, BUILDER>(builderClass);
             _definitionByClass.put(builderClass, result);
             // put reference to initialized class before initialize to allow resolving references to this class in initialization
             result.init();
@@ -52,15 +63,22 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
         return result;
     }
     
-    public Map<Class<? extends Base>, Definition<? extends Base>> definitionByClassMap() { return _definitionByClass; }
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <CONTEXT> Map<Class<? extends Base>, Definition<CONTEXT, ? extends Base>> definitionByClassMap() {
+        return (Map<Class<? extends Base>, Definition<CONTEXT, ? extends Base>>) (Map) _definitionByClass;
+    }
 
-    public INITIAL_BUILDER create(MegaBuilder <RESULT_CLASS, INITIAL_BUILDER> builder) {
-        return initialDefinition().create(
-            builder, (TransInstance<? extends Base, RESULT_CLASS, INITIAL_BUILDER>) null
+    public <CONTEXT> INITIAL_BUILDER create(
+        MegaBuilder<CONTEXT, RESULT_CLASS, INITIAL_BUILDER>.Instance builderInstance
+    ) {
+        return this.<CONTEXT>initialDefinition().create(
+            builderInstance, 
+            (TransInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER>) null
             );
     }
     
-    public class Definition<BUILDER extends Base> extends CommonInstanceDefinition<BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
+    public class Definition<CONTEXT, BUILDER extends Base>
+    extends CommonInstanceDefinition<BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
         
         protected final Class<?>[]_instanceInterfaces;
         
@@ -89,7 +107,7 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
                 for(final Method method : MegaBuilderHelper.getMethodsDeclaredAfter(intf, Base.class)) {
                     final MethodId id = new MethodId(method);
                     if(!_methodById.containsKey(id)) {
-                        final MethodInvoker<?, BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>> invoker;
+                        final MethodInvoker<?, ? extends BuilderInstance<?, BUILDER, RESULT_CLASS, INITIAL_BUILDER>> invoker;
                         {}     if(GetBase    .class.isAssignableFrom(intf)) {
                             {} if(GetBase    .class.equals          (intf)) continue;
                             invoker = methodInvoker_GetBase_method  (getInterfaceDeclaredAfter((Class<GetBase     >) intf, GetBase  .class));
@@ -112,7 +130,7 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
             }
         }
         
-        public <T extends BuiltBase<?>> MethodInvoker<?, BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>
+        public <T extends BuiltBase<?>> MethodInvoker<?, BuilderInstance<?, BUILDER, RESULT_CLASS, INITIAL_BUILDER>
         > methodInvoker_BuiltBase_method(Class<T> intf) {
             final Method[] methods = intf.getMethods();
             if(1 != methods.length) {
@@ -157,8 +175,8 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
             _isBuilt = true;
             
             @SuppressWarnings({"unchecked", "rawtypes"})
-            final MethodInvoker<?, BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>> result
-            = (MethodInvoker<?, BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>>) (MethodInvoker) MethodInvoker_BuiltBase_build;
+            final MethodInvoker<?, BuilderInstance<?, BUILDER, RESULT_CLASS, INITIAL_BUILDER>> result
+            = (MethodInvoker<?, BuilderInstance<?, BUILDER, RESULT_CLASS, INITIAL_BUILDER>>) (MethodInvoker) MethodInvoker_BuiltBase_build;
             
             return result;
         }
@@ -268,21 +286,21 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
                 }
                 actualBuilder = null;
             } while(false);
-            return new MethodInvokerTransition<RESULT, Object>(getDefinition(actualBuilder), actualGetterClass);
+            return new MethodInvokerTransition<RESULT, Object>(MegaBuilderDefinition.this.<CONTEXT, RESULT>getDefinition(actualBuilder), actualGetterClass);
         }
     
-        public BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER> createInstance(
-            MegaBuilder  <                RESULT_CLASS, INITIAL_BUILDER> builder   ,
-            TransInstance<? extends Base, RESULT_CLASS, INITIAL_BUILDER> transition
+        public BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER> createInstance(
+            MegaBuilder  <CONTEXT,                 RESULT_CLASS, INITIAL_BUILDER>.Instance builder   ,
+            TransInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER>          transition
         ) {
-            return new BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>(this, builder, transition);
+            return new BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>(this, builder, transition);
         }
         
         public BUILDER create(
-            MegaBuilder  <                RESULT_CLASS, INITIAL_BUILDER> builder   ,
-            TransInstance<? extends Base, RESULT_CLASS, INITIAL_BUILDER> transition
+            MegaBuilder  <CONTEXT                , RESULT_CLASS, INITIAL_BUILDER>.Instance builderInstance,
+            TransInstance<CONTEXT, ? extends Base, RESULT_CLASS, INITIAL_BUILDER>          transition
         ) {
-            return createInstance(builder, transition).proxy();
+            return createInstance(builderInstance, transition).proxy();
         }
         
         public <GETTER extends GetBase, VALUE_TYPE> GETTER createGetterValue(Class<GETTER> key, VALUE_TYPE defaultValue) {
@@ -304,7 +322,7 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
          * @param <RESULT>
          */
         protected class MethodInvokerGet<RESULT>
-        implements MethodInvoker<RESULT, BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
+        implements MethodInvoker<RESULT, BuilderInstance<?, BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
             
             protected final Class<? extends GetBase> _getIntf;
     
@@ -313,7 +331,7 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
             }
     
             @SuppressWarnings("unchecked")
-            @Override public RESULT invoke(BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER> instance, Object[] args) {
+            @Override public RESULT invoke(BuilderInstance<?, BUILDER, RESULT_CLASS, INITIAL_BUILDER> instance, Object[] args) {
                 return (RESULT) instance.getValue(_getIntf);
             }
             
@@ -328,13 +346,13 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
          * @param <RESULTCLASS>
          */
         protected class MethodInvokerTransition<RESULT extends Base, ARG>
-        implements MethodInvoker<RESULT, BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
+        implements MethodInvoker<RESULT, BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
             
-            protected final Definition<RESULT           > _resultDefinition;
+            protected final Definition<CONTEXT, RESULT  > _resultDefinition;
             protected final Class     <? extends GetBase> _getterClass     ;
     
             public MethodInvokerTransition(
-                Definition<RESULT           > resultDefinition,
+                Definition<CONTEXT, RESULT  > resultDefinition,
                 Class     <? extends GetBase> getterClass
             ) {
                 _resultDefinition = resultDefinition;
@@ -342,10 +360,10 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
             }
     
             @SuppressWarnings("unchecked")
-            @Override public RESULT invoke(BuilderInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER> instance, Object[] args) {
+            @Override public RESULT invoke(BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER> instance, Object[] args) {
                 return _resultDefinition.create(
                     instance.builder(),
-                    new TransInstance<BUILDER, RESULT_CLASS, INITIAL_BUILDER>(instance, _getterClass, (ARG) args[0])
+                    new TransInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>(instance, _getterClass, (ARG) args[0])
                     );
             }
             

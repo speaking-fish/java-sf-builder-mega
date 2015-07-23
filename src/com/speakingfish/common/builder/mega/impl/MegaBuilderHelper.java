@@ -16,18 +16,18 @@ public class MegaBuilderHelper {
     public static final MethodId MethodId_Object_toString = methodId(Object     .class, "toString"              );
 
     
-    public static final MethodInvoker<?, ? extends BuilderInstance<? extends Base, Object, ? extends Base>
-    > MethodInvoker_BuiltValues_get = new MethodInvoker<Object, BuilderInstance<? extends Base, Object, ? extends Base>>() {
+    public static final MethodInvoker<?, ? extends BuilderInstance<?, ? extends Base, Object, ? extends Base>
+    > MethodInvoker_BuiltValues_get = new MethodInvoker<Object, BuilderInstance<?, ? extends Base, Object, ? extends Base>>() {
         @SuppressWarnings("unchecked")
-        @Override public Object invoke(BuilderInstance<? extends Base, Object, ? extends Base> instance, Object[] args) {
+        @Override public Object invoke(BuilderInstance<?, ? extends Base, Object, ? extends Base> instance, Object[] args) {
             return instance.get((Class<GetBase>) args[0]);
         }
     };
 
-    public static final MethodInvoker<?, ? extends BuilderInstance<? extends Base, Object, ? extends Base>
-    > MethodInvoker_BuiltValues_get_value = new MethodInvoker<Object, BuilderInstance<? extends Base, Object, ? extends Base>>() {
+    public static final MethodInvoker<?, ? extends BuilderInstance<?, ? extends Base, Object, ? extends Base>
+    > MethodInvoker_BuiltValues_get_value = new MethodInvoker<Object, BuilderInstance<?, ? extends Base, Object, ? extends Base>>() {
         @SuppressWarnings("unchecked")
-        @Override public Object invoke(BuilderInstance<? extends Base, Object, ? extends Base> instance, Object[] args) {
+        @Override public Object invoke(BuilderInstance<?, ? extends Base, Object, ? extends Base> instance, Object[] args) {
             return instance.get((Class<GetBase>) args[0], args[1]);
         }
     };

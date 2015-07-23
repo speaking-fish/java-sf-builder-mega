@@ -40,15 +40,10 @@ public class MyParameterizedClass<THIRD> {
     
     }
     
-    //protected static final MegaBuilder<MyClass, Builder> __builder = MegaBuilder.newBuilder(
     protected static final Builder<?> __builder = MegaBuilder.newBuilder(
-        Builder.class,
-        new ClassBuilder<MyParameterizedClass<?>>() {
-            /**
-             * Common builder [required]
-             * @param builder
-             */
-            @Override public MyParameterizedClass<?> build(BuiltValues values) {
+        Builder.class, null,
+        new ClassBuilder<Object, MyParameterizedClass<?>>() {
+            @Override public MyParameterizedClass<?> build(Object context, BuiltValues values) {
                 return new MyParameterizedClass<Object>(
                     (values instanceof Get_first) ? ((Get_first) values).first() : -1,
                     (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
@@ -56,12 +51,8 @@ public class MyParameterizedClass<THIRD> {
                     );
             }
             
-            /**
-             * Specific builder [optional]
-             * @param builder
-             */
             @SuppressWarnings("unused")
-            public <THIRD> MyParameterizedClass<THIRD> build(B_1_2<THIRD> builder) {
+            public <THIRD> MyParameterizedClass<THIRD> build(Object context, B_1_2<THIRD> builder) {
                 System.out.println("Running specific builder B_1_2");
                 return new MyParameterizedClass<THIRD>(
                     builder.first (),

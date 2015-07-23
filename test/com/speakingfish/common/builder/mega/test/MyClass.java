@@ -88,15 +88,15 @@ public class MyClass {
     
     }
     
-    //protected static final MegaBuilder<MyClass, Builder> __builder = MegaBuilder.newBuilder(
     protected static final Builder __builder = MegaBuilder.newBuilder(
-        Builder.class,
-        new ClassBuilder<MyClass>() {
+        Builder.class, null,
+        new ClassBuilder<Object, MyClass>() {
             /**
              * Common builder [required]
+             * @param context
              * @param builder
              */
-            @Override public MyClass build(BuiltValues values) {
+            @Override public MyClass build(Object context, BuiltValues values) {
                 return new MyClass(
                     // There three ways to access values: 
                     // 1. access field via check instanceof and cast to getter class:
@@ -110,10 +110,11 @@ public class MyClass {
             
             /**
              * Specific builder [optional]
+             * @param context
              * @param builder
              */
             @SuppressWarnings("unused")
-            public MyClass build(B_1_2 builder) {
+            public MyClass build(Object context, B_1_2 builder) {
                 System.out.println("Running specific builder B_1_2");
                 return new MyClass(
                     builder.first (),
@@ -189,6 +190,7 @@ public class MyClass {
         for(MyClass value : values) {
             System.out.println(value);
         }
+
     }
 
 }
