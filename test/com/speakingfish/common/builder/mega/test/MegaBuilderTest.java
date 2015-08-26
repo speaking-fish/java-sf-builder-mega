@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.speakingfish.common.builder.mega.MegaBuilder.BuiltValues;
-import com.speakingfish.common.builder.mega.test.MyClass.Build.Get_first;
+import com.speakingfish.common.builder.mega.test.MyClass.Build.*;
 
 public class MegaBuilderTest {
     
@@ -66,5 +66,19 @@ public class MegaBuilderTest {
     @Test (expected = ClassCastException.class) public void testCastException2() {
         assertEquals(1, ((Get_first) MyClass.builder().second(2)).first());
     }
+
+/* not implemented
+    @Test public void testEqualsAndHashCode() {
+        B_1 a_first1 = MyClass.builder().first(1);
+        B_1 b_first1 = MyClass.builder().first(1);
+        assertTrue(a_first1.equals(b_first1));
+        assertEquals(a_first1.hashCode(), b_first1.hashCode());
+        
+        B_1_2 a_first1second2 = MyClass.builder().first(1).second(2);
+        B_1_2 b_second2first1 = MyClass.builder().second(2).first(1);
+        assertTrue(a_first1second2.equals(b_second2first1));
+        assertEquals(a_first1second2.hashCode(), b_second2first1.hashCode());
+    }
+*/
     
 }
