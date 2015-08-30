@@ -46,18 +46,56 @@ public class MyClass {
         public interface T_2<T extends G_2> extends TransBase { T second(double second); }
         public interface T_3<T extends G_3> extends TransBase { T third (String third ); }
     
-        // Before make builder interfaces matrix, draw valid field combination matrix:
+        // Validation table preparation step (can skip this).
+        //
+        // Draw full field combination matrix:
+        //        
+        // first second third
+        // -     -      -
+        // -     -      +
+        // -     +      -
+        // -     +      +
+        // +     -      -
+        // +     -      +
+        // +     +      -
+        // +     +      +
+        //
+        // Reorganize as tree:
+        //
+        // first second third
+        // -     -      -    /
+        // +     -      -    /+
+        // +     +      -    /+/+
+        // +     +      +    /+/+/+
+        // +     -      +    /+/-/+
+        // -     +      -    /-/+
+        // -     +      +    /-/+/+
+        // -     -      +    /-/-/+
+        //
+        // Mark valid field combination matrix:
         //
         // for example:
         //
         // first second third
-        // -     -      -
-        // +     -      -
-        // +     +      -
-        // +     -      +
-        // -     +      +
-        // -     -      +
+        // -     -      -    /       *  
+        // +     -      -    /+      *
+        // +     +      -    /+/+    *
+        // +     +      +    /+/+/+
+        // +     -      +    /+/-/+  *
+        // -     +      -    /-/+     
+        // -     +      +    /-/+/+  *
+        // -     -      +    /-/-/+  *
         //
+        // Do remove invalid terminal nodes and empty nodes. Repeat (if you can).
+        //
+        // first second third
+        // -     -      -    /       *  
+        // +     -      -    /+      *
+        // +     +      -    /+/+    *
+        // +     -      +    /+/-/+  *
+        // -     +      -    /-/+     
+        // -     +      +    /-/+/+  *
+        // -     -      +    /-/-/+  *
         //
         
         // Builder interface
@@ -76,14 +114,14 @@ public class MyClass {
         //                             |    second    |           second                              | second
         //                             |    |    third|           |           third                   | | third
         //                             |    |    |    |           |           |                       | | |
-        public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {} // - - -
-        public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {} // + - -
-        public interface B_1_2 extends G_1, G_2,                                          Built {} // + + - 
-        public interface B_1_3 extends G_1,      G_3,                                     Built {} // + - +
-        public interface B_2   extends      G_2,      T_1<B_1_2>,             T_3<B_2_3>        {} //
-        public interface B_2_3 extends      G_2, G_3,                                     Built {} // - + +
-        public interface B_3   extends           G_3, T_1<B_1_3>, T_2<B_2_3>,             Built {} // - - +
-        
+        public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {} // - - -    /       *
+        public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {} // + - -    /+      *
+        public interface B_1_2 extends G_1, G_2,                                          Built {} // + + -    /+/+    *
+        public interface B_1_3 extends G_1,      G_3,                                     Built {} // + - +    /+/-/+  *
+        public interface B_2   extends      G_2,      T_1<B_1_2>,             T_3<B_2_3>        {} // - + -    /-/+     
+        public interface B_2_3 extends      G_2, G_3,                                     Built {} // - + +    /-/+/+  *
+        public interface B_3   extends           G_3, T_1<B_1_3>, T_2<B_2_3>,             Built {} // - - +    /-/-/+  *
+
         public interface Builder extends B {}
     
     }
