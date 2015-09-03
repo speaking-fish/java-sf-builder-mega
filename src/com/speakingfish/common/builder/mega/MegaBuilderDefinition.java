@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.speakingfish.common.builder.mega.MegaBuilder.GetBase;
 import com.speakingfish.common.builder.mega.MegaBuilder.*;
 import com.speakingfish.common.builder.mega.impl.*;
 
@@ -33,8 +34,11 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
     protected final Map<Class<? extends Base>, Definition<?, ? extends Base>> _definitionByClass
     =       new HashMap<Class<? extends Base>, Definition<?, ? extends Base>>();
 
-    protected final Map<Class<? extends GetBase>, GetterValueDefinition<? extends Base, ?>> _getterValueDefinitionByClass
-    =       new HashMap<Class<? extends GetBase>, GetterValueDefinition<? extends Base, ?>>();
+    protected final Map<Class<? extends GetBase>, GetterValueDefinition<? extends GetBase, ?>> _getterValueDefinitionByClass
+    =       new HashMap<Class<? extends GetBase>, GetterValueDefinition<? extends GetBase, ?>>();
+    
+    protected final Map<Class<? extends TransBase>, TransValueDefinition<? extends TransBase, ? extends GetBase, ?>> _transValueDefinitionByClass
+    =       new HashMap<Class<? extends TransBase>, TransValueDefinition<? extends TransBase, ? extends GetBase, ?>>();
     
     protected final Definition<?, INITIAL_BUILDER> _initialDefinition;
     
@@ -195,7 +199,7 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
                 throw new IllegalArgumentException("Illegal get-base extension. Invalid get method: " + method.toString());
             }
             
-            GetterValueDefinition<? extends Base, ?> getterValueDefinition = _getterValueDefinitionByClass.get(intf);
+            GetterValueDefinition<? extends GetBase, ?> getterValueDefinition = _getterValueDefinitionByClass.get(intf);
             if(null == getterValueDefinition) {
                 final Class<?>[] interfaces = new Class<?>[] {intf};
                 getterValueDefinition = new GetterValueDefinition<GETTER, Object>(method) {
@@ -208,7 +212,7 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
             return new MethodInvokerGet<Object>(intf);
         }
         
-        public <RESULT extends T, T extends TransBase> MethodInvokerTransition<RESULT, Object> methodInvoker_TransBase_method(Class<T> intf) {
+        public <RESULT extends T, T extends TransBase> MethodInvokerTransition<RESULT, Object> methodInvoker_TransBase_method(final Class<T> intf) {
             @SuppressWarnings("unchecked")
             final Class<RESULT> parent = (Class<RESULT>) _builderClass;
             
@@ -257,7 +261,8 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
             ) {
                 throw new IllegalArgumentException("Illegal trans-base extension. Invalid transition method: " + method.toString());
             }
-            final Class<RESULT> transition = MegaBuilderHelper.getInterfaceDeclaredAfter(parent, intf);
+            //final Class<RESULT> transition = MegaBuilderHelper.getInterfaceDeclaredAfter(parent, intf);
+            final Class<RESULT> transition = MegaBuilderHelper.getLastNotSimpleAliasInterface(parent);
             final Class<RESULT> actualBuilder;
             outer: do {
                 for(final Type type : transition.getGenericInterfaces()) {
@@ -286,7 +291,29 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
                 }
                 actualBuilder = null;
             } while(false);
-            return new MethodInvokerTransition<RESULT, Object>(MegaBuilderDefinition.this.<CONTEXT, RESULT>getDefinition(actualBuilder), actualGetterClass);
+            
+            TransValueDefinition<? extends TransBase, ? extends GetBase, ?> transValueDefinition = _transValueDefinitionByClass.get(intf);
+            if(null == transValueDefinition) {
+                //@SuppressWarnings("unchecked")
+                //final GetterValueDefinition<GetBase, Object> getterValueDefinition = (GetterValueDefinition<GetBase, Object>) _getterValueDefinitionByClass.get(actualGetterClass);
+                final Class<?>[] interfaces = new Class<?>[] {intf};
+                transValueDefinition = new TransValueDefinition<TransBase, GetBase, Object>(method) {
+                    @Override public ClassLoader instanceClassLoader() { return intf.getClassLoader(); }
+                    @Override public Class<?>[]  instanceInterfaces () { return interfaces; }
+                    @SuppressWarnings("unchecked")
+                    @Override public GetterValueDefinition<GetBase, Object> getterDefinition() {
+                        return (GetterValueDefinition<GetBase, Object>) _getterValueDefinitionByClass.get(actualGetterClass);
+                    }
+                    
+                };
+                _transValueDefinitionByClass.put(intf, transValueDefinition);
+            }
+            
+            return new MethodInvokerTransition<RESULT, Object>(
+                MegaBuilderDefinition.this.<CONTEXT, RESULT>getDefinition(actualBuilder),
+                actualGetterClass,
+                intf
+                );
         }
     
         public BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER> createInstance(
@@ -314,6 +341,21 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
                 return getterValueDefinition.create(defaultValue);
             }
         }
+
+        public <TRANSITION extends TransBase, GETTER extends GetBase> TRANSITION createTransValue(
+            Class<TRANSITION> key, TransInstance<CONTEXT, ? extends Base, RESULT_CLASS, Base> transInstance
+        ) {
+            @SuppressWarnings("unchecked")
+            final TransValueDefinition<TRANSITION, GETTER, Object> transValueDefinition
+            =    (TransValueDefinition<TRANSITION, GETTER, Object>) _transValueDefinitionByClass.get(key);
+            
+            if(null == transInstance) {
+                return transValueDefinition.create(false, null);
+            } else {
+                return transValueDefinition.create(true , transInstance.value);
+            }
+        }
+        
         
         /**
          * 
@@ -348,22 +390,25 @@ public class MegaBuilderDefinition<RESULT_CLASS, INITIAL_BUILDER extends Base> {
         protected class MethodInvokerTransition<RESULT extends Base, ARG>
         implements MethodInvoker<RESULT, BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>> {
             
-            protected final Definition<CONTEXT, RESULT  > _resultDefinition;
-            protected final Class     <? extends GetBase> _getterClass     ;
+            protected final Definition<CONTEXT, RESULT    > _resultDefinition;
+            protected final Class     <? extends GetBase  > _getterClass     ;
+            protected final Class     <? extends TransBase> _transClass      ;
     
             public MethodInvokerTransition(
-                Definition<CONTEXT, RESULT  > resultDefinition,
-                Class     <? extends GetBase> getterClass
+                Definition<CONTEXT, RESULT    > resultDefinition,
+                Class     <? extends GetBase  > getterClass     ,
+                Class     <? extends TransBase> transClass
             ) {
                 _resultDefinition = resultDefinition;
                 _getterClass      = getterClass     ;
+                _transClass       = transClass      ;
             }
     
             @SuppressWarnings("unchecked")
             @Override public RESULT invoke(BuilderInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER> instance, Object[] args) {
                 return _resultDefinition.create(
                     instance.builder(),
-                    new TransInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>(instance, _getterClass, (ARG) args[0])
+                    new TransInstance<CONTEXT, BUILDER, RESULT_CLASS, INITIAL_BUILDER>(instance, _getterClass, _transClass, (ARG) args[0])
                     );
             }
             

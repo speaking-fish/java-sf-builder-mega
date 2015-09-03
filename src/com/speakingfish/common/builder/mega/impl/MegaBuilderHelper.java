@@ -8,12 +8,15 @@ import com.speakingfish.common.builder.mega.MegaBuilder.*;
 
 public class MegaBuilderHelper {
     
-    public static final MethodId MethodId_BuiltValues_get       = methodId(BuiltValues.class, "get", Class .class);
-    public static final MethodId MethodId_BuiltValues_get_value = methodId(BuiltValues.class, "get", Class .class, Object.class);
+    public static final MethodId MethodId_BuiltValues_get        = methodId(BuiltValues.class, "get"       , Class .class);
+    public static final MethodId MethodId_BuiltValues_get_value  = methodId(BuiltValues.class, "get"       , Class .class, Object.class);
+    public static final MethodId MethodId_BuiltValues_getDefault = methodId(BuiltValues.class, "getDefault", Class .class);
+    public static final MethodId MethodId_BuiltValues_getValue   = methodId(BuiltValues.class, "getValue"  , Class .class);
+    public static final MethodId MethodId_BuiltValues_hasValue   = methodId(BuiltValues.class, "hasValue"  , Class .class);
     
-    public static final MethodId MethodId_Object_equals   = methodId(Object     .class, "equals"  , Object.class);
-    public static final MethodId MethodId_Object_hashCode = methodId(Object     .class, "hashCode"              );
-    public static final MethodId MethodId_Object_toString = methodId(Object     .class, "toString"              );
+    public static final MethodId MethodId_Object_equals          = methodId(Object     .class, "equals"    , Object.class);
+    public static final MethodId MethodId_Object_hashCode        = methodId(Object     .class, "hashCode"                );
+    public static final MethodId MethodId_Object_toString        = methodId(Object     .class, "toString"                );
 
     
     public static final MethodInvoker<?, ? extends BuilderInstance<?, ? extends Base, Object, ? extends Base>
@@ -32,13 +35,43 @@ public class MegaBuilderHelper {
         }
     };
 
-    public static final MethodInvoker<?, ? extends GetterValueInstance<?, ?>
+    public static final MethodInvoker<?, ? extends BuilderInstance<?, ? extends Base, Object, ? extends Base>
+    > MethodInvoker_BuiltValues_getDefault = new MethodInvoker<Object, BuilderInstance<?, ? extends Base, Object, ? extends Base>>() {
+        @SuppressWarnings("unchecked")
+        @Override public Object invoke(BuilderInstance<?, ? extends Base, Object, ? extends Base> instance, Object[] args) {
+            return instance.getDefault((Class<TransBase>) args[0]);
+        }
+    };
+    
+    public static final MethodInvoker<?, ? extends BuilderInstance<?, ? extends Base, Object, ? extends Base>
+    > MethodInvoker_BuiltValues_getValue = new MethodInvoker<Object, BuilderInstance<?, ? extends Base, Object, ? extends Base>>() {
+        @SuppressWarnings("unchecked")
+        @Override public Object invoke(BuilderInstance<?, ? extends Base, Object, ? extends Base> instance, Object[] args) {
+            return instance.getValue((Class<GetBase>) args[0]);
+        }
+    };
+
+    public static final MethodInvoker<?, ? extends BuilderInstance<?, ? extends Base, Object, ? extends Base>
+    > MethodInvoker_BuiltValues_hasValue = new MethodInvoker<Object, BuilderInstance<?, ? extends Base, Object, ? extends Base>>() {
+        @SuppressWarnings("unchecked")
+        @Override public Object invoke(BuilderInstance<?, ? extends Base, Object, ? extends Base> instance, Object[] args) {
+            return instance.hasValue((Class<GetBase>) args[0]);
+        }
+    };
+    
+    public static final MethodInvoker<?, ? extends GetterValueInstance<? extends GetBase, ?>
     > MethodInvoker_GetterValue_getter = new MethodInvoker<Object, GetterValueInstance<?, ?>>() {
         @Override public Object invoke(GetterValueInstance<?, ?> instance, Object[] args) {
             return instance.get();
         }
     };
     
+    public static final MethodInvoker<?, ? extends TransValueInstance<? extends TransBase, ? extends GetBase, Object>
+    > MethodInvoker_TransValue_transition  = new MethodInvoker<Object, TransValueInstance<?, ?, Object>>() {
+        @Override public Object invoke(TransValueInstance<? extends TransBase, ? extends GetBase, Object> instance, Object[] args) {
+            return instance.transition(args[0]);
+        }
+    };
     
     public static final MethodInvoker<?, Object
     > MethodInvoker_Object_equals = new MethodInvoker<Object, Object>() {
@@ -84,8 +117,11 @@ public class MegaBuilderHelper {
     public static final CommonInstanceDefinition<?> InstanceDefinition_BuiltValues = new CommonInstanceDefinition<Object>() {
         
         {
-            _methodById.put(MethodId_BuiltValues_get      , MethodInvoker_BuiltValues_get      );
-            _methodById.put(MethodId_BuiltValues_get_value, MethodInvoker_BuiltValues_get_value);
+            _methodById.put(MethodId_BuiltValues_get       , MethodInvoker_BuiltValues_get      );
+            _methodById.put(MethodId_BuiltValues_get_value , MethodInvoker_BuiltValues_get_value);
+            _methodById.put(MethodId_BuiltValues_getDefault, MethodInvoker_BuiltValues_getDefault);
+            _methodById.put(MethodId_BuiltValues_getValue  , MethodInvoker_BuiltValues_getValue  );
+            _methodById.put(MethodId_BuiltValues_hasValue  , MethodInvoker_BuiltValues_hasValue  );
         }
         
         @Override public ClassLoader instanceClassLoader() {
@@ -158,6 +194,25 @@ public class MegaBuilderHelper {
         return null;
     }
 
+    public static <R, T extends R> Class<R> getLastNotSimpleAliasInterface(Class<T> intf) {
+        Class<?> current = intf; 
+        while(true) {
+            if((null == current) || (current == Object.class)) {
+                return null;
+            }
+            if(0 == current.getDeclaredMethods().length) {
+                Class<?>[] interfaces = current.getInterfaces();
+                if(interfaces.length == 1) {
+                    current = interfaces[0];
+                    continue;
+                }
+            }
+            @SuppressWarnings("unchecked")
+            final Class<R> result = (Class<R>) current;
+            return result;
+        }
+    }
+    
     public static MethodId methodId(Class<?> origin, String name, Class<?>... parameterTypes) {
         try {
             return new MethodId(origin.getMethod(name, parameterTypes));

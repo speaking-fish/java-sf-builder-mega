@@ -10,8 +10,7 @@ public class MyClass {
 
         // Built interface
         // extends BuiltBase with result class type parameter
-        public interface Built extends BuiltBase<MyClass> {
-        }
+        public interface Built extends BuiltBase<MyClass> {}
         
         // Getter interface
         // (no interface name restrictions)
@@ -25,26 +24,32 @@ public class MyClass {
         public interface Get_second extends GetBase { double second(); }
         public interface Get_third  extends GetBase { String third (); }
     
+        // Transition interface
+        // (no interface name restrictions)
+        // 1. extends TransBase
+        // 2. has single type parameter, what extends corresponding getter interface
+        // 3. has single transition method with parameter of same type as in corresponding getter interface
+        //    and return type of this transition interface type parameter (no method name restrictions)
+        //
+        //                                                  return type parameter
+        //                                                                      | field name
+        // type parameter extends corresponding getter                          | |
+        //                                      |                               | |      field type same as in corresponding getter
+        //                                      |                               | |      |
+        public interface Trans_first <T extends Get_first > extends TransBase { T first (int    first ); }
+        public interface Trans_second<T extends Get_second> extends TransBase { T second(double second); }
+        public interface Trans_third <T extends Get_third > extends TransBase { T third (String third ); }
+        
         // Shortcuts for getter interfaces
         public interface G_1 extends Get_first {}
         public interface G_2 extends Get_second{}
         public interface G_3 extends Get_third {}
         
-        // Transition interface
-        // (no interface name restrictions)
-        // 1. extends TransBase
-        // 2. has single type parameter, what extends linked getter interface
-        // 3. has single transition method with parameter of same type as in linked getter interface
-        //    and return type of this transition interface type parameter (no method name restrictions)
-        //
-        //                                  return type parameter
-        //                                                      | field name
-        // type parameter extends linked getter                 | |
-        //                             |                        | |      field type same as in linked getter
-        //                             |                        | |      |
-        public interface T_1<T extends G_1> extends TransBase { T first (int    first ); }
-        public interface T_2<T extends G_2> extends TransBase { T second(double second); }
-        public interface T_3<T extends G_3> extends TransBase { T third (String third ); }
+        // Shortcuts for transition interfaces
+        public interface T_1<T extends G_1> extends Trans_first <T> {}
+        public interface T_2<T extends G_2> extends Trans_second<T> {}
+        public interface T_3<T extends G_3> extends Trans_third <T> {}
+        
     
         // Validation table preparation step (can skip this).
         //
@@ -72,7 +77,7 @@ public class MyClass {
         // -     +      +    /-/+/+
         // -     -      +    /-/-/+
         //
-        // Mark valid field combination matrix:
+        // Mark valid field combination:
         //
         // for example:
         //
@@ -141,8 +146,8 @@ public class MyClass {
                     (values instanceof Get_first) ? ((Get_first) values).first() : -1,
                     // 2. access field via BuiltValues.get method
                     (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
-                    // 3. access field via BuiltValues.get with specify default value method
-                    values.get(Get_third.class, null).third()
+                    // 3. access field via BuiltValues.getDefault then specify default value, then get
+                    values.getDefault(Trans_third.class).third(null).third()
                     );
             }
             
@@ -153,7 +158,7 @@ public class MyClass {
              */
             @SuppressWarnings("unused")
             public MyClass build(Object context, B_1_2 builder) {
-                System.out.println("Running specific builder B_1_2");
+                System.out.println("Running specific builder B_1_2 for " + MyClass.class);
                 return new MyClass(
                     builder.first (),
                     builder.second(),

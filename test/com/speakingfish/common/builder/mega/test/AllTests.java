@@ -8,6 +8,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
     MegaBuilderTest             .class,
     MegaBuilderParameterizedTest.class,
+    MegaBuilderLocalTest        .class,
 })
 
 public class AllTests {}

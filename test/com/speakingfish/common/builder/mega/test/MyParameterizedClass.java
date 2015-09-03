@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.speakingfish.common.builder.mega.MegaBuilder;
 import com.speakingfish.common.builder.mega.MegaBuilder.*;
-import com.speakingfish.common.builder.mega.test.MyParameterizedClass.Build.Builder;
 import com.speakingfish.common.builder.mega.test.MyParameterizedClass.Build.*;
 
 import static java.util.Arrays.*;
@@ -13,21 +12,24 @@ public class MyParameterizedClass<THIRD> {
     
     public static class Build<THIRD> {
 
-        public interface Built<THIRD> extends BuiltBase<MyParameterizedClass<THIRD>> {
-        }
+        public interface Built<THIRD> extends BuiltBase<MyParameterizedClass<THIRD>> {}
         
         public interface Get_first         extends GetBase { int    first (); }
         public interface Get_second        extends GetBase { double second(); }
         public interface Get_third <THIRD> extends GetBase { THIRD  third (); }
     
+        public interface Trans_first <       T extends Get_first        > extends TransBase { T first (int    first ); }
+        public interface Trans_second<       T extends Get_second       > extends TransBase { T second(double second); }
+        public interface Trans_third <THIRD, T extends Get_third <THIRD>> extends TransBase { T third (THIRD  third ); }
+    
         public interface G_1     extends Get_first      {}
         public interface G_2     extends Get_second     {}
         public interface G_3<P3> extends Get_third <P3> {}
         
-        public interface T_1<    T extends G_1    > extends TransBase { T first (int    first ); }
-        public interface T_2<    T extends G_2    > extends TransBase { T second(double second); }
-        public interface T_3<P3, T extends G_3<P3>> extends TransBase { T third (P3     third ); }
-    
+        public interface T_1<    T extends G_1    > extends Trans_first <    T> {}
+        public interface T_2<    T extends G_2    > extends Trans_second<    T> {}
+        public interface T_3<P3, T extends G_3<P3>> extends Trans_third <P3, T> {}
+        
         public interface B    <P3> extends                    T_1<B_1  <P3>>, T_2<B_2  <P3>>, T_3<P3, B_3  <P3>>, Built<P3> {}
         public interface B_1  <P3> extends G_1,                               T_2<B_1_2<P3>>, T_3<P3, B_1_3<P3>>, Built<P3> {}
         public interface B_1_2<P3> extends G_1, G_2,                                                              Built<P3> {} 
@@ -47,13 +49,14 @@ public class MyParameterizedClass<THIRD> {
                 return new MyParameterizedClass<Object>(
                     (values instanceof Get_first) ? ((Get_first) values).first() : -1,
                     (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
-                    values.get(Get_third.class, null).third()
+                    // Oops! You must specify type to avoid warning 
+                    values.<Trans_third<?, ?>>getDefault(Trans_third.class).third(null).third()
                     );
             }
             
             @SuppressWarnings("unused")
             public <THIRD> MyParameterizedClass<THIRD> build(Object context, B_1_2<THIRD> builder) {
-                System.out.println("Running specific builder B_1_2");
+                System.out.println("Running specific builder B_1_2 for " + MyParameterizedClass.class);
                 return new MyParameterizedClass<THIRD>(
                     builder.first (),
                     builder.second(),

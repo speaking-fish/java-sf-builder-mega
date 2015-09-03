@@ -47,20 +47,56 @@ public class MegaBuilder<CONTEXT, RESULT_CLASS, INITIAL_BUILDER extends MegaBuil
    }
     
     /**
-     * Field values holder
+     * Built values holder
      *  
      * @see ClassBuilder#build(BuiltValues)
      */
     public interface BuiltValues extends Base {
+        
         /**
          * @param key getter class
          * @return getter interface or null if no value assigned for this getter or key is wrong getter type
          */
         <T extends GetBase> T get(Class<T> key);
+        
+        /**<p>
+         * @param key transition class ("super" used for compatibility with parameterized classes to to avoid compilation error)
+         * @return transition interface of corresponding getter interface for set default value,
+         *         that returns corresponding getter interface with that default value if no value assigned for that getter type
+         *         or getter interface
+         * </p>
+         * <p>        
+         * Example:
+         * <code>
+         * values.getDefault(Trans_first.class).first(-1).first()
+         * </code>
+         * </p>
+         * <p>
+         * For parameterized classes this method is a little bit more complex, because you must specify type:
+         * <code>
+         * values.&lt;Trans_third&lt;TYPE or ? for any, ?&gt;&gt;getDefault(Trans_third.class).third(null).third()
+         * </code>
+         * </p>
+         */
+        <T extends TransBase> T getDefault(Class<? super T> key);
+        
         /**
-         * 
          * @param key getter class
-         * @param defaultValue warning! untyped! be careful!
+         * @return value <b>Untyped warning! You must correct cast result Object to actual type - can't check this in compile time!</b>
+         * If no value available, not null returns, but exception was thrown.
+         */
+        Object getValue(final Class<? extends GetBase> key);
+
+        /**
+         * @param key
+         * @return true - has value
+         */
+        boolean hasValue(final Class<? extends GetBase> key);
+        
+        /**
+         *  
+         * @param key getter class
+         * @param defaultValue <b>Untyped warning! You must correct pass defaultValue of actual type - can't check this in compile time!</b>
          * @return getter interface with actual value, or if no value assigned, defaultValue wrapped with getter interface or null if key is wrong getter type
          */
         <T extends GetBase> T get(Class<T> key, Object defaultValue);

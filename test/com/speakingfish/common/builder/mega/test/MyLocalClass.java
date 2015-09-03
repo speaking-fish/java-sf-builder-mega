@@ -9,20 +9,23 @@ public class MyLocalClass {
     
     public static class Build {
 
-        public interface Built extends BuiltBase<MyLocalClass> {
-        }
+        public interface Built extends BuiltBase<MyLocalClass> {}
         
         public interface Get_first  extends GetBase { int    first (); }
         public interface Get_second extends GetBase { double second(); }
         public interface Get_third  extends GetBase { String third (); }
     
+        public interface Trans_first <T extends Get_first > extends TransBase { T first (int    first ); }
+        public interface Trans_second<T extends Get_second> extends TransBase { T second(double second); }
+        public interface Trans_third <T extends Get_third > extends TransBase { T third (String third ); }
+        
         public interface G_1 extends Get_first {}
         public interface G_2 extends Get_second{}
         public interface G_3 extends Get_third {}
-        
-        public interface T_1<T extends G_1> extends TransBase { T first (int    first ); }
-        public interface T_2<T extends G_2> extends TransBase { T second(double second); }
-        public interface T_3<T extends G_3> extends TransBase { T third (String third ); }
+
+        public interface T_1<T extends G_1> extends Trans_first <T> {}
+        public interface T_2<T extends G_2> extends Trans_second<T> {}
+        public interface T_3<T extends G_3> extends Trans_third <T> {}
     
         public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {} // - - -
         public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {} // + - -
@@ -45,14 +48,14 @@ public class MyLocalClass {
                 return new MyLocalClass(
                     (values instanceof Get_first) ? ((Get_first) values).first() : -1,
                     (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
-                    values.get(Get_third.class, null).third(),
+                    values.getDefault(Trans_third.class).third(null).third(),
                     context
                     );
             }
             
             @SuppressWarnings("unused")
             public MyLocalClass build(String context, B_1_2 builder) {
-                System.out.println("Running specific builder B_1_2");
+                System.out.println("Running specific builder B_1_2 for " + MyLocalClass.class + " at context: " + context);
                 return new MyLocalClass(
                     builder.first (),
                     builder.second(),
@@ -92,7 +95,7 @@ public class MyLocalClass {
     @Override public String toString() {
         return "MyLocalClass [first=" + first + ", second=" + second + ", third=" + third + ", context=" + context + "]";
     }
-    
+/*    
     @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
@@ -119,7 +122,37 @@ public class MyLocalClass {
         } else if(!third.equals(other.third)) return false;
         return true;
     }
+*/
+    @Override public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((context == null) ? 0 : context.hashCode());
+        result = prime * result + first;
+        long temp;
+        temp = Double.doubleToLongBits(second);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        result = prime * result + ((third == null) ? 0 : third.hashCode());
+        return result;
+    }
 
+    @Override public boolean equals(Object obj) {
+        if(this == obj) return true;
+        if(obj == null) return false;
+        if(getClass() != obj.getClass()) return false;
+        MyLocalClass other = (MyLocalClass) obj;
+        if(context == null) {
+            if(other.context != null) return false;
+        } else if(!context.equals(other.context)) return false;
+        if(first != other.first) return false;
+        if(Double.doubleToLongBits(second) != Double.doubleToLongBits(other.second)) return false;
+        if(third == null) {
+            if(other.third != null) return false;
+        } else if(!third.equals(other.third)) return false;
+        return true;
+    }
+
+    
+    
     public static void main(String[] args) {
         MyLocalClass[] values = new MyLocalClass[] {
             builder("A")                              .build(),
@@ -143,14 +176,21 @@ public class MyLocalClass {
                     return new MyLocalClass(
                         (values instanceof Get_first) ? ((Get_first) values).first() : -1,
                         (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
-                        values.get(Get_third.class, null).third(),
+                        values.getDefault(Trans_third.class).third(null).third(),
                         ""
                         );
                 }
                 
                 @SuppressWarnings("unused")
                 public MyLocalClass build(Object context, B_1_2 builder) {
-                    buildProgress.append("Running specific builder B_1_2. context: ").append(context).append(" builder: ").append(builder).append('\n');
+                    buildProgress
+                        .append("Running specific builder B_1_2 for ")
+                        .append(MyLocalClass.class).append(" at context: ")
+                        .append(context)
+                        .append(" builder: ")
+                        .append(builder)
+                        .append('\n')
+                        ;
                     return new MyLocalClass(
                         builder.first (),
                         builder.second(),
