@@ -27,13 +27,13 @@ public class MyLocalClass {
         public interface T_2<T extends G_2> extends Trans_second<T> {}
         public interface T_3<T extends G_3> extends Trans_third <T> {}
     
-        public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {} // - - -
-        public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {} // + - -
-        public interface B_1_2 extends G_1, G_2,                                          Built {} // + + - 
-        public interface B_1_3 extends G_1,      G_3,                                     Built {} // + - +
-        public interface B_2   extends      G_2,      T_1<B_1_2>,             T_3<B_2_3>        {} //
-        public interface B_2_3 extends      G_2, G_3,                                     Built {} // - + +
-        public interface B_3   extends           G_3, T_1<B_1_3>, T_2<B_2_3>,             Built {} // - - +
+        public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {}
+        public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {}
+        public interface B_1_2 extends G_1, G_2,                                          Built {} 
+        public interface B_1_3 extends G_1,      G_3,                                     Built {}
+        public interface B_2   extends      G_2,      T_1<B_1_2>,             T_3<B_2_3>        {}
+        public interface B_2_3 extends      G_2, G_3,                                     Built {}
+        public interface B_3   extends           G_3, T_1<B_1_3>, T_2<B_2_3>,             Built {}
         
         public interface Builder extends B {}
     
@@ -95,34 +95,7 @@ public class MyLocalClass {
     @Override public String toString() {
         return "MyLocalClass [first=" + first + ", second=" + second + ", third=" + third + ", context=" + context + "]";
     }
-/*    
-    @Override public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + first;
-        long temp;
-        temp = Double.doubleToLongBits(second);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((third == null) ? 0 : third.hashCode());
-        return result;
-    }
-
-    @Override public boolean equals(Object obj) {
-        if(this == obj) return true;
-        if(obj == null) return false;
-        if(getClass() != obj.getClass()) return false;
-        MyLocalClass other = (MyLocalClass) obj;
-        if(first != other.first) return false;
-        if(Double.doubleToLongBits(second) != Double.doubleToLongBits(other.second))
-            return false;
-        
-        if(third == null) {
-            if(other.third != null) return false;
-            
-        } else if(!third.equals(other.third)) return false;
-        return true;
-    }
-*/
+    
     @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
