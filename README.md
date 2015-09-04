@@ -19,4 +19,4 @@ See <https://github.com/speaking-fish/java-sf-builder-mega/tree/master/test/com/
 
 ##Related:
 For simplest java builder pattern see <https://github.com/speaking-fish/java-sf-builder-simple-example>
-
+Article: <http://habrahabr.ru/post/261163/>
