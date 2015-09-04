@@ -14,9 +14,9 @@ Repository: java-sf-builder-mega
 ## Disadvantages:
 1. Still use reflection and proxies, sorry.
 
-##Usage
-
+##Usage:
 See <https://github.com/speaking-fish/java-sf-builder-mega/tree/master/test/com/speakingfish/common/builder/mega/test>
 
+##Related:
 For simplest java builder pattern see <https://github.com/speaking-fish/java-sf-builder-simple-example>
 
