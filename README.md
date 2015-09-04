@@ -1,4 +1,5 @@
-# java-sf-builder-mega
+Repository: java-sf-builder-mega
+
 # Mega Builder
 
 ## Goals:
@@ -15,5 +16,7 @@
 
 ##Usage
 
-see test/
+See <https://github.com/speaking-fish/java-sf-builder-mega/tree/master/test/com/speakingfish/common/builder/mega/test>
+
+For simplest java builder pattern see <https://github.com/speaking-fish/java-sf-builder-simple-example>
 
