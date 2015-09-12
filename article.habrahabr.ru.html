@@ -1,0 +1,403 @@
+<img src="https://habrastorage.org/files/763/527/356/7635273567a5430da3f8bf365a0d0528.png"/>
+Один из часто рассматриваемых паттернов - паттерн Builder.
+В основном рассматриваются варианты реализации "классического" варианта этого паттерна:
+<source lang="java">
+MyClass my = MyClass.builder().first(1).second(2.0).third("3").build();
+</source>Паттерн прост и понятен как табурет, но чувствуется какая-то недосказанность - то минимальный вариант объявляется антипаттерном, то более сложные случаи игнорируются. Хотелось бы исправить этот момент, рассмотрев предельные случаи и определив минимальную и максимальную границы сложности этого паттерна.
+Итак, расссмотрим их:
+<cut />
+<h1>Минимальный builder или Реабилитация double brace initialization</h1>
+Сначала рассмотрим минимальный builder, про который часто забывают - double brace initialization
+<a href="http://stackoverflow.com/questions/1958636/what-is-double-brace-initialization-in-java">http://stackoverflow.com/questions/1958636/what-is-double-brace-initialization-in-java</a>
+<a href="http://c2.com/cgi/wiki?DoubleBraceInitialization">http://c2.com/cgi/wiki?DoubleBraceInitialization</a>.
+Используя double brace initialization мы можем делать следующее:
+<source lang="java">
+new MyClass() {{ first = 1; second = 2.0; third = "3"; }}
+</source>
+Что мы тут видим?
+<ol>
+    <li><spoiler title="Нарушение совместимости equals">
+Что такое "совместимость equals"?
+Дело в том что стандартный equals примерно такой:
+<source lang="java">
+@Override public boolean equals(Object obj) {
+    if(this == obj) return true;
+    if(!super.equals(obj)) return false;
+    if(getClass() != obj.getClass()) return false;
+    ...
+}
+</source>
+и при сравнении с унаследованным классом equals будет возвращать false.
+Но мы создаём анонимный унаследованный класс и вмешиваемся в цепочку наследования.
+</spoiler></li>
+<li>Возможная утечка памяти, т.к. анонимный класс будет держать ссылку на контекст создания.</li>
+<li>Инициализация полей без проверок.</li>
+</ol>
+Кроме того, таким образом невозможно создавать immutable объекты, так как нельзя использовать final полей.
+
+В результате обычно double brace initialization используют для инициализации составных структур.
+Например:
+<source lang="java">
+new TreeMap<String, Object>() {{ put("first", 1); put(second, 2.0); put("third", "3"); }}
+</source>Тут используются методы, а не прямой доступ к полям и совместимость по equals обычно не требуется.
+
+Так как же мы можем использовать такой ненадёжный хакоподобный метод?
+
+Да очень просто - выделив для double brace initialization отдельный класс билдера.
+
+Код такого билдера содержит только определения полей с установленными значениями по умолчанию и методы построения, отвечающие за проверку параметров и вызов конструкторов:
+<source lang="java">
+public static class Builder {
+    public int    first  = -1        ;
+    public double second = Double.NaN;
+    public String third  = null      ;
+    
+    public MyClass create() {
+        return new MyClass(
+            first ,
+            second,
+            third
+            );
+    }
+}
+</source>
+Использование:
+<source lang="java">
+new MyClass.Builder(){{ first = 1; third = "3"; }}.create()
+</source>
+Что мы получаем?
+<ol>
+    <li>Builder не вмешивается в цепочку наследования - это отдельный класс.</li>
+    <li>Builder не течёт - его использование прекращается после создания объекта.</li>
+    <li>Builder может контролировать параметры - в методе создания объекта.</li>
+</ol>
+Voila! Double brace initialization реабилитирована.
+
+Для использовании наследования, Builder разделяется на две части (один с полями, другой - с методом создания) следующим образом:
+<source lang="java">
+public class MyBaseClass {
+
+    protected static class BuilderImpl {
+        public int    first  = -1        ;
+        public double second = Double.NaN;
+        public String third  = null      ;
+    }
+    
+    public static class Builder extends BuilderImpl {
+        
+        public MyBaseClass create() {
+            return new MyBaseClass(
+                first ,
+                second,
+                third
+                );
+        }
+        
+    }
+    ...
+}
+public class MyChildClass extends MyBaseClass {
+
+    protected static class BuilderImpl extends MyBaseClass.BuilderImpl {
+        public Object fourth = null;
+    }
+    
+    public static class Builder extends BuilderImpl {
+        public MyChildClass create() {
+            return new MyChildClass(
+                first ,
+                second,
+                third ,
+                fourth
+                );
+        }
+        
+    }
+    ...
+}
+</source>
+Если нужны обязательные параметры, они будут выглядеть так:
+<source lang="java">
+public static class Builder {
+    public double second = Double.NaN;
+    public String third  = null      ;
+    
+    public MyClass create(int first) {
+        return new MyClass(
+            first ,
+            second,
+            third
+            );
+    }
+}
+</source>
+Использование:
+<source lang="java">
+new MyClass.Builder(){{ third = "3"; }}.create(1)
+</source>
+Это настолько просто, что можно использовать хоть как построитель параметров функций, например:
+<source lang="java">
+String fn = new fn(){{ first = 1; third = "3"; }}.invoke();
+</source>
+Полный код на <a href="https://github.com/speaking-fish/java-sf-builder-simple-example">github</a>
+
+Перейдём к сложному.
+
+<h1>Максимально сложный Mega Builder</h1>
+А что, собственно, можно усложнить? А вот что:
+Сделаем Builder, который в compile-time будет:
+<ol>
+    <li>не позволять использовать недопустимые комбинации параметров</li>
+    <li>не позволять строить объект если не заполнены обязательные параметров</li>
+    <li>не допускать повторной инициализации параметров</li>
+</ol>
+Что нам понадобится для этого?
+Для этого нам понадобится создать интерфейсы со всеми вариантами сочетаний параметров, для чего сначала сделем декомпозицию объекта на отдельные интерфейсы соответствующие каждому параметру.
+
+Нам понадобится интерфейс для присвоения каждого параметра и возврата нового билдера.
+Он должен выглядеть как-то так:
+<source lang="java">
+public interface TransitionNAME<T> { T NAME(TYPE v); }
+</source>При этом NAME должен быть разным для каждого интерфейса - ведь их потом надо будет объединять.
+
+Также понадобится и getter, чтобы мы могли получить значение после такого присвоения:
+<source lang="java">
+public interface GetterNAME { TYPE NAME(); }
+</source>
+Поскольку нам понадобится связка transition-getter, определим transition-интерфейс следующим образом:
+<source lang="java">
+public interface TransitionNAME<T extends GetterNAME> { T NAME(TYPE v); }
+</source>Это также добавит статического контроля в описаниях.
+
+Примерно понятно, наборы каких интерфейсов мы собираемся перебирать.
+Определимся теперь, как это сделать.
+
+Возьмём такой же как в предыдущем примере 1-2-3 класс и распишем для начала все сочетания параметров. Получим знакомое бинарное представление:
+<source lang="java">
+first second third
+-     -      -
+-     -      +
+-     +      -
+-     +      +
++     -      -
++     -      +
++     +      -
++     +      +
+</source>
+Для удобства представим это в виде дерева следующим образом:
+<source lang="java">
+first second third
+-     -      -    /
++     -      -    /+
++     +      -    /+/+
++     +      +    /+/+/+
++     -      +    /+/-/+
+-     +      -    /-/+
+-     +      +    /-/+/+
+-     -      +    /-/-/+
+</source>
+Промаркируем допустимые сочетания, например так:
+<source lang="java">
+first second third
+-     -      -    /       *
++     -      -    /+      *
++     +      -    /+/+    * 
++     +      +    /+/+/+
++     -      +    /+/-/+  *
+-     +      -    /-/+
+-     +      +    /-/+/+  *
+-     -      +    /-/-/+  *
+</source>
+Удалим лишние узлы - терминальные недопустимые узлы и пустые узлы.
+В общем случае это циклический процесс, продолжающийся пока есть узлы для удаления, но в данном случае у нас только один терминальный недопустимый узел.
+<source lang="java">
+first second third
+-     -      -    /       *
++     -      -    /+      *
++     +      -    /+/+    * 
++     -      +    /+/-/+  *
+-     +      -    /-/+
+-     +      +    /-/+/+  *
+-     -      +    /-/-/+  *
+</source>
+Как же реализовать это?
+
+Нам нужно, чтобы каждое присвоение элемента приводило к сокращению оставшихся вариантов использования.
+Для этого каждое присвоение элемента через transition-интерфейс должно возвращать новый класс builder-а плюс getter-интерфейс для этого transition минус этот transition-интерфейс.
+
+Нарисуем интерфейсы:
+<source lang="java">
+public interface Get_first  { int    first (); }
+public interface Get_second { double second(); }
+public interface Get_third  { String third (); }
+
+public interface Trans_first <T extends Get_first > { T first (int    first ); }
+public interface Trans_second<T extends Get_second> { T second(double second); }
+public interface Trans_third <T extends Get_third > { T third (String third ); }
+</source>
+Табличку с этим рисовать неудобно, сократим идентификаторы:
+<source lang="java">
+public interface G_1 extends Get_first {}
+public interface G_2 extends Get_second{}
+public interface G_3 extends Get_third {}
+
+public interface T_1<T extends G_1> extends Trans_first <T> {}
+public interface T_2<T extends G_2> extends Trans_second<T> {}
+public interface T_3<T extends G_3> extends Trans_third <T> {}
+</source>
+Нарисуем табличку переходов:
+<source lang="java">
+public interface B     extends T_1<B_1  >, T_2<B_2  >, T_3<B_3  > {} // - - -    /       *
+public interface B_1   extends             T_2<B_1_2>, T_3<B_1_3> {} // + - -    /+      *
+public interface B_1_2 extends                                    {} // + + -    /+/+    *
+public interface B_1_3 extends                                    {} // + - +    /+/-/+  *
+public interface B_2   extends T_1<B_1_2>,             T_3<B_2_3> {} //          /-/+     
+public interface B_2_3 extends                                    {} // - + +    /-/+/+  *
+public interface B_3   extends T_1<B_1_3>, T_2<B_2_3>             {} // - - +    /-/-/+  *
+</source>
+Определим Built интерфейс: 
+<source lang="java">
+public interface Built { MyClass build(); }
+</source>
+Промаркируем интерфейсы, где уже можно построить класс интерфейсом Built, добавим getter-ы и определим получившийся Builder-интерфейс:
+<source lang="java">
+//                                                  транзит
+//                                                    |                           можем строить
+//                                 геттеры            |                             |
+//                                   |                |                             |
+//                             -------------  ----------------------------------  -----
+//
+//                             first          first                                           first 
+//                             |    second    |           second                              | second
+//                             |    |    third|           |           third                   | | third
+//                             |    |    |    |           |           |                       | | |
+public interface B     extends                T_1<B_1  >, T_2<B_2  >, T_3<B_3  >, Built {} // - - -    /       *
+public interface B_1   extends G_1,                       T_2<B_1_2>, T_3<B_1_3>, Built {} // + - -    /+      *
+public interface B_1_2 extends G_1, G_2,                                          Built {} // + + -    /+/+    * 
+public interface B_1_3 extends G_1,      G_3,                                     Built {} // + - +    /+/-/+  *
+public interface B_2   extends      G_2,      T_1<B_1_2>,             T_3<B_2_3>        {} //          /-/+     
+public interface B_2_3 extends      G_2, G_3,                                     Built {} // - + +    /-/+/+  *
+public interface B_3   extends           G_3, T_1<B_1_3>, T_2<B_2_3>,             Built {} // - - +    /-/-/+  *
+
+public interface Builder extends B {}
+</source>
+Этих описаний достаточно, чтобы по ним можно было в run-time соорудить proxy, надо только подправить получившиеся определения, добавив в них маркерные интерфейсы:
+<source lang="java">
+public interface Built extends BuiltBase<MyClass> {}
+
+public interface Get_first  extends GetBase { int    first (); }
+public interface Get_second extends GetBase { double second(); }
+public interface Get_third  extends GetBase { String third (); }
+
+public interface Trans_first <T extends Get_first > extends TransBase { T first (int    first ); }
+public interface Trans_second<T extends Get_second> extends TransBase { T second(double second); }
+public interface Trans_third <T extends Get_third > extends TransBase { T third (String third ); }
+</source>
+Теперь надо получить из Builder-классов значения чтобы создать реальный класс.
+
+Тут возможно два варианта - или создавать методы для каждого билдера и статически-типизированно получать параметры из каждого builder-а:
+<source lang="java">
+public MyClass build(B     builder) { return new MyClass(-1             , Double.NaN      , null); }
+public MyClass build(B_1   builder) { return new MyClass(builder.first(), Double.NaN      , null); }
+public MyClass build(B_1_2 builder) { return new MyClass(builder.first(), builder.second(), null); }
+...
+</source>
+или воспользоваться обобщённым методом, определённым примерно следующим образом:
+<source lang="java">
+public MyClass build(BuiltValues values) {
+    return new MyClass(
+        // значения из values
+        );
+}
+</source>
+Но как получить значения?
+
+Во-первых у нас есть по-прежнему есть набор builder-классов у которых есть нужные getter-ы.
+Соответственно надо проверять есть ли реализация нужного getter и если есть - приводить тип к нему и получать значение:
+<source lang="java">
+(values instanceof Get_first) ? ((Get_first) values).first() : -1
+</source>
+Конечно, можно добавить метод получения значения, но оно будет нетипизированным, так как мы не сможем получить тип значения из существующих типов:
+<source lang="java">
+Object getValue(final Class< ? extends GetBase> key);
+</source>Использование:
+<source lang="java">
+(Integer) values.getValue(Get_first.class)
+</source>
+Для того чтобы получить тип, пришлось бы создавать дополнительные классы и связки наподобие:
+<source lang="java">
+public interface TypedGetter<T, GETTER> { Class<GETTER> getterClass(); };
+
+public static final Classed<T> GET_FIRST = new Classed<Integer>(Get_first.class);
+</source>
+Тогда метод получения значения мог бы быть определён следующим образом:
+<source lang="java">
+public <T, GETTER> T get(TypedGetter<T, GETTER> typedGetter);
+</source>
+Но мы попытаемся обойтись тем что есть - getter и transition интерфейсами.
+
+Тогда, без приведений типов, вернуть значение можно только вернув getter-интерфейс или null, если такой интерфейс не определён для данного builder:
+<source lang="java">
+<T extends GetBase> T get(Class<T> key);
+</source>
+Использование:
+<source lang="java">
+(null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second()
+</source>
+Это уже лучше. Но можно ли добавить значение по-умолчанию в случае отсутствия интерфейса, сохранив тип?
+
+Конечно, возможно возвращать типизированный getter-интерфейс, но всё равно придётся передавать нетипизированное значение по умолчанию:
+<source lang="java">
+<T extends GetBase> T get(Class<T> key, Object defaultValue);
+</source>
+Но мы можем воспользоваться для установки значения по умолчанию transition-интерфейсом:
+<source lang="java">
+<T extends TransBase> T getDefault(Class< ? super T> key);
+</source>
+И использовать это следующим образом:
+<source lang="java">
+values.getDefault(Get_third.class).third("1").third()
+</source>
+Это всё что можно типобезопасно соорудить с существующими интерфейсами.
+
+Создадим обобщённый метод инициализации иллюстрирующий перечисленные варианты использования и проинициализируем результирующий билдер:
+<source lang="java">
+protected static final Builder __builder = MegaBuilder.newBuilder(
+    Builder.class, null,
+    new ClassBuilder<Object, MyClass>() {
+        @Override public MyClass build(Object context, BuiltValues values) {
+            return new MyClass(
+                (values instanceof Get_first) ? ((Get_first) values).first() : -1,
+                (null == values.get(Get_second.class)) ? Double.NaN: values.get(Get_second.class).second(),
+                values.getDefault(Get_third.class).third(null).third()
+                );
+        }
+    }
+);
+
+public static Builder builder() { return __builder; }
+</source>
+Теперь можно его вызывать:
+<source lang="java">
+builder()                              .build();
+builder().first(1)                     .build();
+builder().first(1).second(2)           .build(); builder().second(2  ).first (1).build();
+builder().first(1)          .third("3").build(); builder().third ("3").first (1).build(); 
+builder()         .second(2).third("3").build(); builder().third ("3").second(2).build();
+builder()                   .third("3").build();
+</source>
+
+Скачать код и посмотреть на работу context assist можно <a href="https://github.com/speaking-fish/java-sf-builder-mega">отсюда</a>
+
+В частности:
+Код рассматриваемого примера: <a href="https://github.com/speaking-fish/java-sf-builder-mega/blob/master/test/com/speakingfish/common/builder/mega/test/MyClass.java">MyClass.java</a>
+Пример с generic-типами: <a href="https://github.com/speaking-fish/java-sf-builder-mega/blob/master/test/com/speakingfish/common/builder/mega/test/MyParameterizedClass.java">MyParameterizedClass.java</a>
+Пример не-статического builder: <a href="https://github.com/speaking-fish/java-sf-builder-mega/blob/master/test/com/speakingfish/common/builder/mega/test/MyLocalClass.java">MyLocalClass.java</a>.
+
+<h1>Итого</h1>
+<ul>
+    <li>Double brace initialization не будет хаком или антипаттерном, если добавить немного билдера.</li>
+    <li>Гораздо проще пользоваться динамическими объектами + типизированными дескрипторами доступа (см. в тексте пример с TypedGetter) чем использовать сборки интерфейсов или другие варианты статически-типизированных объектов, поскольку это влечёт за собой необходимость работы с reflection со всеми вытекающими.</li>
+    <li>С использованием аннотаций возможно удалось бы упростить код proxy-генератора, но это усложнило бы объявления и, вероятно, ухудшило бы выявление несоответствий в compile-time.</li>
+    <li>Ну и наконец, в данной статье мы <s>окончательно и бесповоротно</s> определили минимальную и максимальную границу сложности паттерна Builder - все остальные варианты находятся где-то между ними.</li>
+</ul>
